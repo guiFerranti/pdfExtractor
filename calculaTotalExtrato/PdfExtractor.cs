@@ -10,9 +10,9 @@ public class PdfExtractor
     {
         List<string[]> tableData = new List<string[]>();
 
-        using (PdfReader reader = new(pdfPath))
+        using (PdfReader reader = new PdfReader(pdfPath))
         {
-            using (PdfDocument pdfDocument = new(reader))
+            using (PdfDocument pdfDocument = new PdfDocument(reader))
             {
                 for (int pageNum = 1; pageNum <= pdfDocument.GetNumberOfPages(); pageNum++)
                 {
@@ -27,10 +27,22 @@ public class PdfExtractor
                     foreach (Match match in matches)
                     {
                         string[] rowData = new string[4];
-                        for (int i = 1; i <= 4; i++)
+
+                        if (match.Groups[2].Value.StartsWith("SALDO TOTAL DISPONÃVEL DIA") || match.Groups[2].Value.StartsWith("SALDO ANTERIOR"))
                         {
-                            rowData[i - 1] = match.Groups[i].Value.Trim();
+                            rowData[0] = match.Groups[1].Value.Trim();
+                            rowData[1] = match.Groups[2].Value.Trim();
+                            rowData[2] = "";
+                            rowData[3] = match.Groups[3].Value.Trim();
                         }
+                        else
+                        {
+                            rowData[0] = match.Groups[1].Value.Trim();
+                            rowData[1] = match.Groups[2].Value.Trim();
+                            rowData[2] = match.Groups[3].Value.Trim();
+                            rowData[3] = "";
+                        }
+
                         tableData.Add(rowData);
                     }
                 }
