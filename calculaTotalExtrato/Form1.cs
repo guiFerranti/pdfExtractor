@@ -1,37 +1,67 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Windows.Forms;
 
 namespace calculaTotalExtrato
 {
     public partial class Form1 : Form
     {
-        private PdfExtractor pdfExtractor;
-        private ExcelExporter excelExporter;
+        private List<string[]> tableData = null;
 
         public Form1()
         {
             InitializeComponent();
-            pdfExtractor = new PdfExtractor();
-            excelExporter = new ExcelExporter();
         }
 
         private void btnUpload_Click(object sender, EventArgs e)
         {
-            openFileDialog.Filter = "Arquivos PDF|*.pdf";
-
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 string pdfPath = openFileDialog.FileName;
 
-                // Extrair dados do PDF
-                List<string[]> tableData = pdfExtractor.ExtractTableFromPdf(pdfPath);
+                PdfExtractor extractor = new PdfExtractor();
+                tableData = extractor.ExtractTableFromPdf(pdfPath);
 
-                // Exportar para Excel
-                string excelFilePath = Path.Combine(Path.GetDirectoryName(pdfPath), "Extrato.xlsx");
-                excelExporter.ExportToExcel(tableData, excelFilePath);
+                // Calcular total dos valores positivos
+                decimal totalValoresPositivos = 0;
+                foreach (var row in tableData)
+                {
+                    if (!string.IsNullOrEmpty(row[2]) && decimal.TryParse(row[2].Replace(".", "").Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal valor))
+                    {
+                        if (valor > 0)
+                        {
+                            totalValoresPositivos += valor;
+                        }
+                    }
+                }
 
-                MessageBox.Show("Tabela extraída e exportada para Excel com sucesso!");
+                // Calcular média mensal
+                decimal mediaMensal = (totalValoresPositivos * 0.7m) / 6;
+
+                // Exibir resultados
+                CultureInfo culturaBrasileira = new CultureInfo("pt-BR");
+                lblTotal.Text = $"Total: {totalValoresPositivos.ToString("C", culturaBrasileira)}";
+                lblMediaMensal.Text = $"Média Mensal: {mediaMensal.ToString("C", culturaBrasileira)}";
+            }
+        }
+
+        private void btnDownload_Click(object sender, EventArgs e)
+        {
+            if (tableData != null)
+            {
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string savePath = saveFileDialog.FileName;
+                    ExcelExporter exporter = new ExcelExporter();
+                    exporter.ExportToExcel(tableData, savePath);
+                    MessageBox.Show("Arquivo Excel salvo com sucesso em " + savePath);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Por favor, carregue um extrato primeiro.");
             }
         }
     }

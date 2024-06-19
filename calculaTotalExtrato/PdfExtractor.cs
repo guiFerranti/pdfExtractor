@@ -2,6 +2,7 @@
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 public class PdfExtractor
@@ -50,5 +51,30 @@ public class PdfExtractor
         }
 
         return tableData;
+    }
+
+    public decimal CalcularTotalValoresPositivos(List<string[]> tableData)
+    {
+        decimal total = 0;
+
+        foreach (var row in tableData)
+        {
+            if (!string.IsNullOrWhiteSpace(row[2]))
+            {
+                string valorFormatado = row[2].Replace(".", "").Replace(",", ".");
+                decimal valor = Convert.ToDecimal(valorFormatado, CultureInfo.InvariantCulture);
+                if (valor > 0)
+                {
+                    total += valor;
+                }
+            }
+        }
+
+        return total;
+    }
+
+    public decimal CalcularMediaMensal(decimal totalValoresPositivos)
+    {
+        return (totalValoresPositivos * 0.7m) / 6m;
     }
 }
